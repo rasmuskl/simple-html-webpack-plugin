@@ -1,7 +1,7 @@
 {
   "name": "simple-html-webpack-plugin",
   "version": "0.0.2",
-  "description": "Fast and lightweight version of html-webpack-plugin",
+  "description": "Lightweight fork / adaptation of html-webpack-plugin",
   "main": "index.js",
   "scripts": {},
   "author": "Rasmus Kromann-Larsen @rasmuskl",
