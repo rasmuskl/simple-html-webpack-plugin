@@ -6,15 +6,12 @@ var minify = require('html-minifier').minify;
 
 function SimpleHtmlWebpackPlugin(options) {
     this.options = Object.assign({}, {
-        alwaysWriteToDisk: false
+        alwaysWriteToDisk: false,
+        filename: 'index.html'
     }, options);
     
     if (!options.template) {
         throw 'Missing required parameter: template (string)';
-    }
-
-    if (!options.filename) {
-        throw 'Missing required parameter: filename (string)';
     }
 
     if (!options.chunks || !options.chunks.length) {
