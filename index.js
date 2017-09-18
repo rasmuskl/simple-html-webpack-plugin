@@ -25,7 +25,7 @@ function SimpleHtmlWebpackPlugin(options) {
     this.lastTimestamp = new Date().getTime();
 }
 
-SimpleHtmlWebpackPlugin.prototype.apply = function (compiler) {
+SimpleHtmlWebpackPlugin.prototype.apply = function(compiler) {
     let options = this.options;
     const relevantChunks = {};
 
@@ -93,12 +93,8 @@ SimpleHtmlWebpackPlugin.prototype.apply = function (compiler) {
         }
 
         compilation.assets[options.filename] = {
-            source: function () {
-                return output;
-            },
-            size: function () {
-                return output.length;
-            }
+            source: () => output,
+            size: () => output.length
         }
 
         if (options.alwaysWriteToDisk) {
@@ -116,25 +112,24 @@ SimpleHtmlWebpackPlugin.prototype.apply = function (compiler) {
     }
 
     function sortChunks(chunks) {
-        var nodeMap = {};
-
-        chunks.forEach(function (chunk) {
-            nodeMap[chunk.id] = chunk;
-        });
-
+        const nodeMap = {};
         const edges = [];
 
-        chunks.forEach((chunk) => {
-            if (chunk.parents) {
-                chunk.parents.forEach((parentId) => {
-                    const parentChunk = typeof parentId === 'object' ? parentId : nodeMap[parentId]
-
-                    if (parentChunk) {
-                        edges.push([parentChunk, chunk])
-                    }
-                })
+        for(const chunk of chunks) {
+            nodeMap[chunk.id] = chunk;
+        }
+        for(const chunk of chunks) {
+            if (!chunk.parents) {
+                continue;
             }
-        })
+
+            for(const parentId of chunk.parents) {
+                const parentChunk = typeof parentId === 'object' ? parentId : nodeMap[parentId]
+                if (parentChunk) {
+                    edges.push([parentChunk, chunk])
+                }
+            }
+        }
 
         return toposort.array(chunks, edges);
     }
