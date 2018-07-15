@@ -33,7 +33,12 @@ SimpleHtmlWebpackPlugin.prototype.apply = function(compiler) {
 
     compiler.plugin('emit', (compilation, callback) => {
         const templatePath = path.join(compiler.context, options.template);
-        compilation.fileDependencies.push(templatePath);
+
+        if(Array.isArray(compilation.fileDependencies)) { // webpack 3
+            compilation.fileDependencies.push(templatePath);
+        } else { // webpack 4
+            compilation.fileDependencies.add(templatePath);
+        }
 
         const changedChunks = compilation.chunks.filter(chunk => {
             var oldVersion = this.chunkVersions[chunk.name];
@@ -63,7 +68,7 @@ SimpleHtmlWebpackPlugin.prototype.apply = function(compiler) {
         let bodyTags = [];
 
         let targetChunks = compilation.chunks.filter(c => relevantChunks[c.name] === true);
-        let sortedChunks = sortChunks(targetChunks);
+        let sortedChunks = sortChunks(targetChunks, compilation.chunkGroups);
 
         var publicPath = compilation.options.output.publicPath || '';
         if (publicPath && publicPath.substr(-1) !== '/') {
@@ -109,27 +114,45 @@ SimpleHtmlWebpackPlugin.prototype.apply = function(compiler) {
         return `${path}${path.indexOf('?') === -1 ? '?' : '&'}${hash}`;
     }
 
-    function sortChunks(chunks) {
+    function sortChunks(chunks, chunkGroups) {
         const nodeMap = {};
-        const edges = [];
 
         for(const chunk of chunks) {
             nodeMap[chunk.id] = chunk;
         }
-        for(const chunk of chunks) {
-            if (!chunk.parents) {
-                continue;
-            }
 
-            for(const parentId of chunk.parents) {
-                const parentChunk = typeof parentId === 'object' ? parentId : nodeMap[parentId]
-                if (parentChunk) {
-                    edges.push([parentChunk, chunk])
+        // webpack 4
+        if (chunkGroups) {
+            let edges = chunkGroups.reduce((result, chunkGroup) => result.concat(Array.from(chunkGroup.parentsIterable, parentGroup => [parentGroup, chunkGroup])), []);
+            const sortedGroups = toposort.array(chunkGroups, edges);
+            const sortedChunks = sortedGroups
+                .reduce((result, chunkGroup) => result.concat(chunkGroup.chunks), [])
+                .map(chunk => nodeMap[chunk.id])
+                .filter((chunk, index, self) => {
+                    const exists = !!chunk;
+                    const unique = self.indexOf(chunk) === index;
+                    return exists && unique;
+                });
+
+            return sortedChunks;
+        } else { // webpack 3
+            let edges = [];
+
+            for(const chunk of chunks) {
+                if (!chunk.getParents()) {
+                    continue;
+                }
+    
+                for(const parentId of chunk.getParents()) {
+                    const parentChunk = typeof parentId === 'object' ? parentId : nodeMap[parentId]
+                    if (parentChunk) {
+                        edges.push([parentChunk, chunk])
+                    }
                 }
             }
-        }
 
-        return toposort.array(chunks, edges);
+            return toposort.array(chunks, edges);
+        }
     }
 };
 
