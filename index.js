@@ -139,11 +139,11 @@ SimpleHtmlWebpackPlugin.prototype.apply = function(compiler) {
             let edges = [];
 
             for(const chunk of chunks) {
-                if (!chunk.getParents()) {
+                if (!chunk.parents) {
                     continue;
                 }
     
-                for(const parentId of chunk.getParents()) {
+                for(const parentId of chunk.parents) {
                     const parentChunk = typeof parentId === 'object' ? parentId : nodeMap[parentId]
                     if (parentChunk) {
                         edges.push([parentChunk, chunk])
